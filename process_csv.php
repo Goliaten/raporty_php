@@ -19,18 +19,21 @@ function removeBOM($string) {
 }
 
 if (!file_exists($csvFile)) {
-    die("No CSV file found to process.");
+	header("Location: main.php?upload_status=CSV file not found on server");
+	exit;
 }
 
 $conn = new mysqli($servername, $username, $password);
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+	header("Location: main.php?upload_status=DB connection failed: " . $conn->connect_error);
+	exit;
 }
 
 $sql = "CREATE DATABASE IF NOT EXISTS $dbname";
 if ($conn->query($sql) !== TRUE) {
-    die("Error creating database: " . $conn->error);
+	header("Location: main.php?upload_status=Error creating database: " . $conn->error);
+	exit;
 }
 
 $conn->select_db($dbname);
@@ -42,14 +45,16 @@ $csvData = array_map(function($line) use ($separator) {
 }, file($csvFile));
 
 if (empty($csvData)) {
-    die("The CSV file is empty or could not be read.");
+	header("Location: main.php?upload_status=CSV can't be read");
+	exit;
 }
 
 $headers = $csvData[0];
 
 $sql = "DROP TABLE IF EXISTS $tableName";
 if ($conn->query($sql) !== TRUE) {
-    die("Error dropping table: " . $conn->error);
+	header("Location: main.php?upload_status=Error dropping table: " . $conn->error);
+	exit;
 }
 
 $createTableQuery = "CREATE TABLE $tableName (ID int NOT NULL AUTO_INCREMENT,";
@@ -58,11 +63,13 @@ foreach ($headers as $header) {
 }
 $createTableQuery = rtrim($createTableQuery, ',') . ', PRIMARY KEY(ID))';
 if ($conn->query($createTableQuery) !== TRUE) {
-    die("Error creating table: " . $conn->error);
+	header("Location: main.php?upload_status=Error creating table: " . $conn->error);
+	exit;
 }
 $setEncodingQuery = "ALTER TABLE $tableName CONVERT TO CHARACTER SET $charset";
 if ($conn->query($setEncodingQuery) !== True){
-	die("Error setting the encoding: " . $conn->error);
+	header("Location: main.php?upload_status=Error setting the encoding: " . $conn->error);
+	exit;
 }
 
 
@@ -78,7 +85,8 @@ foreach (array_slice($csvData, 1) as $row) {
     }, $headers)) . ") VALUES (" . implode(",", $row) . ")";
     
     if ($conn->query($insertQuery) !== TRUE) {
-        die("Error inserting data: " . $conn->error);
+		header("Location: main.php?upload_status=Error inserting data: " . $conn->error);
+		exit;
     }
 }
 
